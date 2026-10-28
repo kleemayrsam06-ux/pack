@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zinken – Minecraft-Server</title>
+<link rel="icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --panel: rgba(26, 28, 33, .9);
+    --panel-solid: #1c1e23;
+    --line: #000;
+    --hi: rgba(255, 255, 255, .16);
+    --lo: rgba(0, 0, 0, .45);
+    --text: #f1f1f1;
+    --muted: #b4b9c2;
+    --green: #5fd13f;
+    --green-dark: #2f7d1f;
+    --gold: #ffd54a;
+    --silver: #cfd6df;
+    --bronze: #d9915a;
+    --red: #ff6b5e;
+    --head: "Press Start 2P", "Courier New", monospace;
+    --body: "VT323", "Courier New", monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; color: var(--text); background: #4a90d9;
+    font: 22px/1.3 var(--body);
+    min-height: 100vh;
+  }
+  #world {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; image-rendering: pixelated; z-index: -1;
+  }
+  a { color: var(--green); }
+  h1, h2, h3 { font-family: var(--head); font-weight: normal; line-height: 1.5; margin: 0; text-shadow: 3px 3px 0 #000a; }
+  h1 { font-size: 22px; }
+  h2 { font-size: 16px; }
+  h3 { font-size: 12px; }
+  .muted { color: var(--muted); }
+
+  /* ---------- Minecraft-artige Bausteine ---------- */
+  .panel {
+    background: var(--panel); border: 4px solid var(--line);
+    box-shadow: inset 4px 4px 0 var(--hi), inset -4px -4px 0 var(--lo);
+    padding: 20px;
+  }
+  .btn {
+    font-family: var(--head); font-size: 11px; color: #fff; text-decoration: none; text-shadow: 2px 2px 0 #000a;
+    background: #7d7d7d; border: 4px solid var(--line); padding: 12px 14px; cursor: pointer;
+    box-shadow: inset 4px 4px 0 rgba(255,255,255,.4), inset -4px -4px 0 rgba(0,0,0,.4);
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap;
+  }
+  .btn:hover, .btn:focus-visible { background: #6a8f5a; outline: none; }
+  .btn.active { background: var(--green-dark); }
+  .btn.green { background: #3f9a2b; }
+  .btn.green:hover { background: #4cb336; }
+  .btn.gold { background: #b98a16; }
+  .btn.gold:hover { background: #d6a41e; }
+  .btn[disabled], .btn[aria-disabled="true"] { opacity: .55; cursor: not-allowed; filter: grayscale(.6); }
+  .btn.small { font-size: 9px; padding: 8px 10px; }
+
+  /* ---------- Kopfzeile ---------- */
+  header {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--panel); border-bottom: 4px solid var(--line);
+    box-shadow: 0 4px 0 #0006;
+  }
+  .bar {
+    max-width: 1080px; margin: 0 auto; padding: 8px 16px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .logo { display: block; flex: none; }
+  .logo img { display: block; height: 64px; width: auto; image-rendering: auto; }
+  nav { display: flex; gap: 8px; flex-wrap: wrap; flex: 1 1 auto; }
+  .support { margin-left: auto; }
+
+  main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 140px; }
+  section.page { display: none; }
+  section.page.show { display: block; }
+  .stack > * + * { margin-top: 20px; }
+  .lead { font-size: 26px; margin: 8px 0 0; }
+
+  /* ---------- Startseite ---------- */
+  .status-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 16px; }
+  .chip {
+    background: #0008; border: 4px solid var(--line); padding: 6px 12px; font-size: 22px;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .dot { width: 14px; height: 14px; background: #888; display: inline-block; box-shadow: inset -3px -3px 0 #0005; }
+  .dot.on { background: var(--green); }
+  .dot.off { background: var(--red); }
+  .ip { font-family: var(--head); font-size: 12px; }
+  .players { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-top: 16px; }
+  .pcard {
+    display: flex; align-items: center; gap: 12px; background: #0007; border: 4px solid var(--line);
+    padding: 8px 12px; min-width: 0;
+  }
+  .pcard .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 24px; }
+  .avatar { width: 40px; height: 40px; flex: none; image-rendering: pixelated; background: #3b3b3b; border: 2px solid #000; }
+  .avatar.fallback { display: grid; place-items: center; font-family: var(--head); font-size: 14px; color: #fff; background: #5a7d3a; }
+  .empty { margin-top: 16px; font-size: 24px; color: var(--muted); }
+  .quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .quick a { text-decoration: none; color: inherit; display: block; }
+  .quick .panel:hover { background: rgba(48, 60, 40, .92); }
+  .quick h3 { margin-bottom: 8px; color: var(--green); }
+
+  /* ---------- Teilnehmer ---------- */
+  .members { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; margin-top: 16px; }
+  .member { background: #0007; border: 4px solid var(--line); padding: 14px; display: flex; gap: 14px; align-items: center; min-width: 0; }
+  .member .avatar { width: 64px; height: 64px; }
+  .member .info { min-width: 0; }
+  .member .name { font-size: 26px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .badge { font-family: var(--head); font-size: 9px; background: var(--green-dark); border: 3px solid #000; padding: 4px 6px; margin-left: 6px; vertical-align: middle; }
+
+  /* ---------- Statistiken ---------- */
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .tabs .btn { font-size: 10px; padding: 10px 12px; }
+  .rank-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
+  .rank-head .total { font-size: 24px; color: var(--muted); }
+  .note { font-size: 20px; color: var(--muted); margin: 4px 0 0; }
+  .rank { list-style: none; margin: 12px 0 0; padding: 0; }
+  .rank li {
+    display: grid; grid-template-columns: 44px 44px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+    background: #0007; border: 4px solid var(--line); padding: 8px 12px; margin-bottom: 8px; position: relative; overflow: hidden;
+  }
+  .rank .bar-fill { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, rgba(95,209,63,.35), rgba(95,209,63,.12)); z-index: 0; }
+  .rank li > *:not(.bar-fill) { position: relative; z-index: 1; }
+  .rank .pos { font-family: var(--head); font-size: 12px; text-align: center; padding: 6px 0; background: #2a2d33; border: 3px solid #000; }
+  .rank li:nth-child(1) .pos { background: var(--gold); color: #3a2a00; }
+  .rank li:nth-child(2) .pos { background: var(--silver); color: #222; }
+  .rank li:nth-child(3) .pos { background: var(--bronze); color: #2c1600; }
+  .rank .pname { font-size: 26px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rank .val { font-family: var(--head); font-size: 12px; text-align: right; white-space: nowrap; }
+  .rank .val small { font-family: var(--body); font-size: 20px; color: var(--muted); }
+
+  /* ---------- Tutorial ---------- */
+  .steps { list-style: none; margin: 16px 0 0; padding: 0; counter-reset: step; }
+  .steps > li { counter-increment: step; margin-bottom: 20px; }
+  .steps .panel { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 16px; }
+  .steps .panel::before {
+    content: counter(step); font-family: var(--head); font-size: 16px; color: #fff;
+    width: 48px; height: 48px; display: grid; place-items: center; background: var(--green-dark); border: 4px solid #000;
+    box-shadow: inset 4px 4px 0 rgba(255,255,255,.3), inset -4px -4px 0 rgba(0,0,0,.35);
+  }
+  .steps p { margin: 8px 0 0; }
+  .shot { margin: 14px 0 0; }
+  .shot img, .shot .ph { display: block; width: 100%; max-width: 720px; border: 4px solid #000; background: #0006; cursor: zoom-in; }
+  .shot .ph {
+    aspect-ratio: 16 / 9; display: grid; place-items: center; text-align: center; padding: 16px; cursor: default;
+    color: var(--muted); border-style: dashed; border-color: #5a5f69;
+  }
+  .shot figcaption { font-size: 19px; color: var(--muted); margin-top: 4px; }
+  .mods { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 16px; }
+  .mods .panel { padding: 14px; }
+  .mods h3 { color: var(--green); margin-bottom: 6px; }
+  .dl { margin-top: 12px; }
+
+  /* ---------- Lightbox & Dialog ---------- */
+  .overlay {
+    position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.78);
+    display: none; align-items: center; justify-content: center; padding: 16px;
+  }
+  .overlay.show { display: flex; }
+  #lightbox img { max-width: 100%; max-height: 100%; border: 4px solid #000; cursor: zoom-out; }
+  .dialog { width: 100%; max-width: 520px; max-height: 100%; overflow: auto; position: relative; background: var(--panel-solid); }
+  .dialog h2 { margin-bottom: 12px; padding-right: 40px; }
+  .close { position: absolute; top: 10px; right: 10px; padding: 8px 10px; font-size: 12px; }
+  .fields { margin: 16px 0; display: grid; gap: 10px; }
+  .field { background: #0009; border: 4px solid #000; padding: 8px 12px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+  .field .k { grid-column: 1 / -1; font-size: 18px; color: var(--muted); line-height: 1; }
+  .field .v { font-size: 24px; overflow-wrap: anywhere; }
+  .field .v.mono { font-family: var(--head); font-size: 11px; line-height: 1.7; }
+  .pay-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+  .or { text-align: center; color: var(--muted); margin: 14px 0 6px; }
+
+  footer { max-width: 1080px; margin: 0 auto; padding: 0 16px 24px; text-align: center; font-size: 18px; color: #fff; text-shadow: 2px 2px 0 #000; }
+
+  @media (max-width: 640px) {
+    body { font-size: 20px; }
+    .logo img { height: 52px; }
+    .bar { gap: 8px 12px; }
+    nav { order: 3; flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+    nav .btn { font-size: 10px; padding: 10px 10px; }
+    .support { font-size: 9px; padding: 10px 10px; }
+    .panel { padding: 14px; }
+    h1 { font-size: 16px; }
+    h2 { font-size: 13px; }
+    .steps .panel { grid-template-columns: 1fr; }
+    .rank li { grid-template-columns: 36px 36px minmax(0, 1fr) auto; gap: 8px; padding: 8px; }
+    .rank .avatar { width: 34px; height: 34px; }
+    .rank .val { font-size: 10px; }
+    .pay-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="world" aria-hidden="true"></canvas>
+
+<header>
+  <div class="bar">
+    <a class="logo" href="#/" aria-label="Zur Startseite"><img src="logo.png" alt="Zinken"></a>
+    <nav aria-label="Hauptmenü">
+      <a class="btn" href="#/members" data-nav="members">Teilnehmer</a>
+      <a class="btn" href="#/stats" data-nav="stats">Statistiken</a>
+      <a class="btn" href="#/tutorial" data-nav="tutorial">Tutorial</a>
+    </nav>
+    <button class="btn gold support" id="open-pay" type="button" aria-haspopup="dialog">Whitelist</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ========== START ========== -->
+  <section class="page" id="page-home">
+    <div class="stack">
+      <div class="panel">
+        <h1 id="welcome">Willkommen auf dem Zinken</h1>
+        <p class="lead">Franz Peter wird nur im Nether gefunden!</p>
+        <div class="status-row">
+          <span class="chip"><span class="dot" id="status-dot"></span><span id="status-text">Prüfe Status …</span></span>
+          <span class="chip"><span class="ip" id="ip-text"></span></span>
+          <button class="btn small" id="copy-ip" type="button">IP kopieren</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Gerade online</h2>
+        <div id="online-box">
+          <p class="empty">Lade Spieler …</p>
+        </div>
+        <p class="note" id="online-note"></p>
+      </div>
+
+      <div class="quick">
+        <a class="panel" href="#/members"><h3>Teilnehmer</h3><p class="muted">Wer spielt alles mit?</p></a>
+        <a class="panel" href="#/stats"><h3>Statistiken</h3><p class="muted">Tode, Spielzeit, Blöcke, Kills und mehr.</p></a>
+        <a class="panel" href="#/tutorial"><h3>Tutorial</h3><p class="muted">In wenigen Schritten auf den Server.</p></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== TEILNEHMER ========== -->
+  <section class="page" id="page-members">
+    <div class="panel">
+      <h2>Teilnehmer</h2>
+      <p class="muted" id="members-sub">Lade Teilnehmer …</p>
+      <div class="members" id="members"></div>
+    </div>
+  </section>
+
+  <!-- ========== STATISTIKEN ========== -->
+  <section class="page" id="page-stats">
+    <div class="panel">
+      <h2>Statistiken</h2>
+      <p class="muted" id="stats-sub">Lade Statistiken …</p>
+      <div class="tabs" id="tabs" role="tablist"></div>
+      <div id="rank-wrap" hidden>
+        <div class="rank-head">
+          <h3 id="rank-title"></h3>
+          <span class="total" id="rank-total"></span>
+        </div>
+        <p class="note" id="rank-note"></p>
+        <ol class="rank" id="rank"></ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== TUTORIAL ========== -->
+  <section class="page" id="page-tutorial">
+    <div class="panel">
+      <h2>So kommst du auf den Server</h2>
+      <p class="muted">Du brauchst eine Minecraft-Java-Edition. Dann sind es sieben kurze Schritte. Klicke auf ein Bild, um es zu vergrößern.</p>
+      <ol class="steps" id="steps"></ol>
+    </div>
+
+    <div class="panel" style="margin-top:20px">
+      <h2>Das steckt im Modpack</h2>
+      <p class="muted">Alle Mods laufen nur bei dir, der Server bleibt Vanilla-nah.</p>
+      <div class="mods">
+        <div class="panel"><h3>Distant Horizons</h3><p class="muted">Zeigt weit entfernte Landschaft als vereinfachtes Gelände.</p><a href="https://modrinth.com/mods?q=distant+horizons" target="_blank" rel="noopener">auf Modrinth ansehen</a></div>
+        <div class="panel"><h3>Simple Voice Chat</h3><p class="muted">Sprachchat im Spiel, leiser je weiter jemand weg ist.</p><a href="https://modrinth.com/mods?q=simple+voice+chat" target="_blank" rel="noopener">auf Modrinth ansehen</a></div>
+        <div class="panel"><h3>Zoom</h3><p class="muted">Mit einer Taste heranzoomen.</p><a href="https://modrinth.com/mods?q=zoomify" target="_blank" rel="noopener">auf Modrinth ansehen</a></div>
+        <div class="panel"><h3>Minimap</h3><p class="muted">Karte mit eigenen Markierungen.</p><a href="https://modrinth.com/mods?q=minimap" target="_blank" rel="noopener">auf Modrinth ansehen</a></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>Kein offizielles Minecraft-Produkt. Nicht von Mojang oder Microsoft.</footer>
+
+<!-- Bild vergrößern -->
+<div class="overlay" id="lightbox" role="dialog" aria-label="Bild vergrößert"><img alt=""></div>
+
+<!-- Unterstützen-Dialog -->
+<div class="overlay" id="pay-overlay">
+  <div class="panel dialog" role="dialog" aria-modal="true" aria-labelledby="pay-title">
+    <button class="btn small close" id="close-pay" type="button" aria-label="Schließen">X</button>
+    <h2 id="pay-title">Whitelist</h2>
+    <p>Überweise <strong id="pay-amount"></strong> auf dieses Konto, um auf die Whitelist zu kommen.</p>
+    <div class="fields">
+      <div class="field"><span class="k">Empfänger</span><span class="v" id="pay-recipient"></span><button class="btn small" type="button" data-copy="pay-recipient">Kopieren</button></div>
+      <div class="field"><span class="k">IBAN</span><span class="v mono" id="pay-iban"></span><button class="btn small" type="button" data-copy="pay-iban">Kopieren</button></div>
+      <div class="field"><span class="k">Betrag</span><span class="v" id="pay-amount2"></span></div>
+      <div class="field"><span class="k">Verwendungszweck</span><span class="v" id="pay-ref"></span><button class="btn small" type="button" data-copy="pay-ref">Kopieren</button></div>
+    </div>
+    <p class="or">oder direkt bezahlen</p>
+    <div class="pay-row">
+      <a class="btn" id="gpay" target="_blank" rel="noopener">Google Pay</a>
+      <a class="btn" id="apay" target="_blank" rel="noopener">Apple Pay</a>
+    </div>
+    <p class="note" id="wallet-note"></p>
+  </div>
+</div>
+
+<script>
+// =====================================================
+//  HIER ANPASSEN
+// =====================================================
+const CONFIG = {
+  serverName: "Zinken",
+  serverIp: "mein-server.example.net",   // so tragen Spieler den Server ein (ggf. mit :Port)
+  mcVersion: "X.XX.X",
+  modpackUrl: "https://github.com/DEINNAME/DEIN-REPO/releases/latest/download/modpack.mrpack",
+  statsUrl: "stats.json",
+  refreshSeconds: 60,
+  payment: {
+    amount: "1,50 €",
+    recipient: "Dein Name",
+    iban: "AT00 0000 0000 0000 0000",
+    reference: "Zinken Server",
+    // Link zu einer Zahlungsseite mit Google Pay / Apple Pay (z. B. Stripe Payment Link).
+    // Leer lassen, dann sind die beiden Buttons noch deaktiviert.
+    walletLink: ""
+  }
+};
+// =====================================================
+
+const $ = (id) => document.getElementById(id);
+function el(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (k === "class") e.className = v;
+    else if (k === "text") e.textContent = v;
+    else e.setAttribute(k, v);
+  }
+  for (const kid of kids) if (kid != null) e.append(kid);
+  return e;
+}
+const fmt = (n, d = 0) => Number(n ?? 0).toLocaleString("de-AT", { minimumFractionDigits: d, maximumFractionDigits: d });
+
+/* ---------- Minecraft-Hintergrund (wird beim Laden gezeichnet) ---------- */
+function drawWorld(cv) {
+  const W = 192, H = 108;
+  cv.width = W; cv.height = H;
+  const g = cv.getContext("2d");
+  let seed = 11;
+  const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const px = (x, y, c, w = 1, h = 1) => { g.fillStyle = c; g.fillRect(x, y, w, h); };
+  const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
+
+  const sky = ["#4a90d9", "#5499e0", "#60a5e7", "#6eb2ee", "#7fbef3", "#91c9f7", "#a4d4f9", "#b7defb"];
+  for (let y = 0; y < H; y++) px(0, y, sky[Math.min(sky.length - 1, Math.floor(y / (H * 0.72) * sky.length))], W, 1);
+
+  px(146, 10, "rgba(255,246,176,.25)", 20, 20);
+  px(150, 14, "#fff6b0", 12, 12);
+
+  const cloud = (x, y) => {
+    const c = "rgba(255,255,255,.88)";
+    px(x + 3, y, c, 10, 2); px(x, y + 2, c, 18, 3); px(x + 4, y + 5, c, 9, 1);
+  };
+  [[12, 14], [64, 24], [110, 10], [168, 34], [38, 44]].forEach(([x, y]) => cloud(x, y));
+
+  for (let x = 0; x < W; x++) {
+    const h = 66 + Math.round(5 * Math.sin(x / 15) + 3 * Math.sin(x / 6 + 1));
+    px(x, h, "#4d9a66", 1, H - h);
+  }
+
+  const topAt = (x) => 80 + Math.round(4 * Math.sin(x / 13 + 2) + 3 * Math.sin(x / 5));
+  const dirt = ["#8b5a2b", "#7d4f24", "#96622f", "#6f4520"];
+  const stone = ["#7f7f7f", "#8a8a8a", "#757575", "#6b6b6b"];
+  for (let x = 0; x < W; x++) {
+    const top = topAt(x);
+    px(x, top, pick(["#6bc943", "#62bd3c", "#74d34a"]));
+    px(x, top + 1, "#58b035");
+    for (let y = top + 2; y < H; y++) {
+      if (y < top + 8) px(x, y, pick(dirt));
+      else {
+        const r = rnd();
+        px(x, y, r < 0.008 ? "#2b2b2b" : r < 0.014 ? "#d8af93" : r < 0.017 ? "#5decf5" : pick(stone));
+      }
+    }
+  }
+
+  [[20, 0], [58, 1], [118, 0], [166, 1]].forEach(([x, kind]) => {
+    const top = topAt(x);
+    const h = 6 + kind * 2;
+    px(x, top - h, "#6b4a26", 2, h);
+    const l1 = "#2f8a34", l2 = "#3da043";
+    px(x - 3, top - h - 3, l1, 8, 3);
+    px(x - 2, top - h - 6, l2, 6, 3);
+    px(x - 1, top - h - 8, l1, 4, 2);
+  });
+}
+drawWorld($("world"));
+
+/* ---------- Avatar ---------- */
+function avatar(p, size) {
+  const key = p.uuid || p.name;
+  const img = el("img", { class: "avatar", alt: "", loading: "lazy", src: "https://mc-heads.net/avatar/" + encodeURIComponent(key) + "/" + (size || 64) });
+  img.addEventListener("error", () => {
+    img.replaceWith(el("div", { class: "avatar fallback", text: (p.name || "?").slice(0, 1).toUpperCase() }));
+  }, { once: true });
+  return img;
+}
+
+/* ---------- Online-Status ---------- */
+let onlineNames = new Set();
+async function loadOnline() {
+  const dot = $("status-dot"), text = $("status-text"), box = $("online-box"), note = $("online-note");
+  let data;
+  try {
+    if (new URLSearchParams(location.search).has("demo")) {
+      data = { online: true, players: { online: 3, max: 15, list: [{ name: "Notch", uuid: "069a79f4-44e9-4726-a5be-fca90e38aaf5" }, { name: "jeb_", uuid: "853c80ef-3c37-49fd-aa49-938b674adae6" }, { name: "Dinnerbone", uuid: "61699b2e-d327-4a01-9f1e-0ea8c3f06bc6" }] } };
+    } else {
+      const res = await fetch("https://api.mcsrvstat.us/3/" + encodeURIComponent(CONFIG.serverIp), { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      data = await res.json();
+    }
+  } catch (err) {
+    dot.className = "dot"; text.textContent = "Status nicht erreichbar";
+    box.replaceChildren(el("p", { class: "empty", text: "Die Spielerliste konnte gerade nicht geladen werden." }));
+    return;
+  }
+  const list = (data.players && data.players.list) || [];
+  onlineNames = new Set(list.map((p) => p.name.toLowerCase()));
+  if (!data.online) {
+    dot.className = "dot off"; text.textContent = "Server offline";
+    box.replaceChildren(el("p", { class: "empty", text: "Der Server ist gerade nicht erreichbar." }));
+    note.textContent = "";
+  } else {
+    const n = data.players ? data.players.online : 0, max = data.players ? data.players.max : "?";
+    dot.className = "dot on"; text.textContent = "Online · " + n + " / " + max + " Spieler";
+    if (list.length) {
+      const grid = el("div", { class: "players" });
+      list.forEach((p) => grid.append(el("div", { class: "pcard" }, avatar(p, 64), el("span", { class: "name", text: p.name }))));
+      box.replaceChildren(grid);
+      note.textContent = "";
+    } else if (n > 0) {
+      box.replaceChildren(el("p", { class: "empty", text: n + " Spieler online." }));
+      note.textContent = "Die Namen sind nicht abrufbar. Mit enable-query=true in der server.properties werden sie angezeigt.";
+    } else {
+      box.replaceChildren(el("p", { class: "empty", text: "Gerade ist niemand online. Sei der Erste!" }));
+      note.textContent = "";
+    }
+  }
+  renderMembers();
+}
+
+/* ---------- Statistik-Daten ---------- */
+let players = [];
+let updated = null;
+let statsError = false;
+const CATEGORIES = [
+  { id: "deaths",      key: "deaths",        label: "Tode",          icon: "☠", unit: "",     digits: 0, title: "Die meisten Tode" },
+  { id: "playtime",    key: "playtimeHours", label: "Spielzeit",     icon: "⏱", unit: "Std.", digits: 1, title: "Die längste Spielzeit" },
+  { id: "mined",       key: "blocksMined",   label: "Abgebaut",      icon: "⛏", unit: "",     digits: 0, title: "Die meisten Blöcke abgebaut" },
+  { id: "placed",      key: "blocksPlaced",  label: "Platziert",     icon: "▦", unit: "",     digits: 0, title: "Die meisten Blöcke platziert",
+    note: "Näherung: Minecraft zählt das nicht direkt. Gezählt werden alle benutzten Gegenstände ohne Werkzeuge, Waffen und Essen." },
+  { id: "mobs",        key: "mobKills",      label: "Mobs getötet",  icon: "⚔", unit: "",     digits: 0, title: "Die meisten Mobs getötet" },
+  { id: "pvp",         key: "playerKills",   label: "Spieler getötet", icon: "✖", unit: "",   digits: 0, title: "Die meisten Spieler getötet" },
+  { id: "distance",    key: "distanceKm",    label: "Strecke",       icon: "➜", unit: "km",   digits: 1, title: "Die längste Strecke" },
+  { id: "jumps",       key: "jumps",         label: "Sprünge",       icon: "↑", unit: "",     digits: 0, title: "Die meisten Sprünge" },
+  { id: "crafted",     key: "itemsCrafted",  label: "Hergestellt",   icon: "▣", unit: "",     digits: 0, title: "Die meisten Gegenstände hergestellt" }
+];
+
+async function loadStats() {
+  try {
+    const res = await fetch(CONFIG.statsUrl, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    players = data.players || [];
+    updated = data.updated ? new Date(data.updated).toLocaleString("de-AT") : null;
+  } catch (err) {
+    statsError = true;
+  }
+  renderMembers();
+  renderStats();
+}
+
+function statsMessage() {
+  if (statsError) return "Statistiken konnten nicht geladen werden. Beim lokalen Testen im Ordner „python -m http.server“ starten und http://localhost:8000 öffnen.";
+  if (!players.length) return "Noch keine Statistiken vorhanden.";
+  return "Alle " + players.length + " Spieler" + (updated ? " · zuletzt aktualisiert: " + updated : "");
+}
+
+function renderMembers() {
+  $("members-sub").textContent = statsError || !players.length ? statsMessage() : players.length + " Spieler sind dabei.";
+  const box = $("members");
+  box.replaceChildren();
+  [...players].sort((a, b) => a.name.localeCompare(b.name, "de")).forEach((p) => {
+    const name = el("div", { class: "name", text: p.name });
+    if (onlineNames.has(p.name.toLowerCase())) name.append(el("span", { class: "badge", text: "ONLINE" }));
+    box.append(el("div", { class: "member" }, avatar(p, 96), el("div", { class: "info" }, name,
+      el("div", { class: "muted", text: fmt(p.playtimeHours, 1) + " Std. gespielt" }))));
+  });
+}
+
+let currentCat = "deaths";
+function renderStats() {
+  $("stats-sub").textContent = statsMessage();
+  const tabs = $("tabs");
+  tabs.replaceChildren();
+  CATEGORIES.forEach((c) => {
+    const b = el("a", { class: "btn" + (c.id === currentCat ? " active" : ""), href: "#/stats/" + c.id, role: "tab", "aria-selected": String(c.id === currentCat) });
+    b.append(el("span", { text: c.icon }), el("span", { text: c.label }));
+    tabs.append(b);
+  });
+  const wrap = $("rank-wrap");
+  if (statsError || !players.length) { wrap.hidden = true; return; }
+  wrap.hidden = false;
+  const cat = CATEGORIES.find((c) => c.id === currentCat) || CATEGORIES[0];
+  $("rank-title").textContent = cat.title;
+  const total = players.reduce((s, p) => s + (p[cat.key] || 0), 0);
+  $("rank-total").textContent = "Zusammen: " + fmt(total, cat.digits) + (cat.unit ? " " + cat.unit : "");
+  $("rank-note").textContent = cat.note || "";
+  const sorted = [...players].sort((a, b) => (b[cat.key] || 0) - (a[cat.key] || 0));
+  const max = Math.max(1, ...sorted.map((p) => p[cat.key] || 0));
+  const list = $("rank");
+  list.replaceChildren();
+  sorted.forEach((p, i) => {
+    const v = p[cat.key] || 0;
+    const fill = el("div", { class: "bar-fill" });
+    fill.style.width = Math.max(2, (v / max) * 100) + "%";
+    const val = el("span", { class: "val" });
+    val.append(document.createTextNode(fmt(v, cat.digits)));
+    if (cat.unit) val.append(document.createTextNode(" "), el("small", { text: cat.unit }));
+    list.append(el("li", {}, fill, el("span", { class: "pos", text: String(i + 1) }), avatar(p, 64), el("span", { class: "pname", text: p.name }), val));
+  });
+}
+
+/* ---------- Tutorial ---------- */
+const STEPS = [
+  { title: "Prism Launcher installieren", img: "01-prism-download.png", alt: "Download-Seite des Prism Launchers",
+    html: () => [document.createTextNode("Lade den "), el("a", { href: "https://prismlauncher.org/download/", target: "_blank", rel: "noopener", text: "Prism Launcher" }), document.createTextNode(" für dein Betriebssystem herunter und installiere ihn.")] },
+  { title: "Minecraft-Konto hinzufügen", img: "02-konto.png", alt: "Konto hinzufügen im Prism Launcher",
+    html: () => [document.createTextNode("Öffne oben rechts das Konto-Menü, wähle „Konten verwalten“ und melde dich mit deinem Microsoft-Konto an, mit dem du Minecraft gekauft hast.")] },
+  { title: "Modpack herunterladen", img: "03-modpack-download.png", alt: "Modpack-Download auf GitHub", dl: true,
+    html: () => [document.createTextNode("Lade das Modpack für Minecraft "), el("strong", { text: CONFIG.mcVersion }), document.createTextNode(" herunter. Speichere die Datei an einem Ort, den du wiederfindest. Du musst sie nicht entpacken.")] },
+  { title: "Im Prism Launcher importieren", img: "04-importieren.png", alt: "Instanz importieren im Prism Launcher",
+    html: () => [document.createTextNode("Klicke auf „Instanz hinzufügen“, wähle links „Importieren“ und dann die heruntergeladene Datei. Prism richtet Minecraft und alle Mods automatisch ein.")] },
+  { title: "Instanz starten", img: "05-starten.png", alt: "Instanz starten",
+    html: () => [document.createTextNode("Wähle die neue Instanz aus und klicke auf „Starten“. Beim ersten Mal dauert es etwas länger.")] },
+  { title: "Server hinzufügen", img: "06-server.png", alt: "Server im Multiplayer-Menü hinzufügen",
+    html: () => [document.createTextNode("Gehe auf „Mehrspieler“, dann „Server hinzufügen“ und trage diese Adresse ein: "), el("strong", { text: CONFIG.serverIp })] },
+  { title: "Voice-Chat einrichten", img: "07-voicechat.png", alt: "Einstellungen von Simple Voice Chat",
+    html: () => [document.createTextNode("Beim ersten Beitritt fragt Simple Voice Chat nach deinem Mikrofon. Die Einstellungen öffnest du im Spiel mit der Taste V.")] }
+];
+
+function renderTutorial() {
+  const ol = $("steps");
+  ol.replaceChildren();
+  STEPS.forEach((s) => {
+    const body = el("div", {}, el("h3", { text: s.title }), el("p", {}, ...s.html()));
+    if (s.dl) body.append(el("p", { class: "dl" }, el("a", { class: "btn green", href: CONFIG.modpackUrl, target: "_blank", rel: "noopener", text: "Modpack herunterladen" })));
+    const shot = el("figure", { class: "shot" });
+    const img = el("img", { src: "screenshots/" + s.img, alt: s.alt, loading: "lazy" });
+    img.addEventListener("error", () => {
+      img.replaceWith(el("div", { class: "ph" }, el("div", {}, el("div", { text: "Screenshot folgt" }), el("div", { class: "note", text: "screenshots/" + s.img }))));
+    }, { once: true });
+    img.addEventListener("click", () => openLightbox(img.src, s.alt));
+    shot.append(img, el("figcaption", { text: s.alt }));
+    body.append(shot);
+    ol.append(el("li", {}, el("div", { class: "panel" }, body)));
+  });
+}
+
+/* ---------- Lightbox ---------- */
+function openLightbox(src, alt) {
+  const box = $("lightbox");
+  const img = box.querySelector("img");
+  img.src = src; img.alt = alt || "";
+  box.classList.add("show");
+}
+$("lightbox").addEventListener("click", () => $("lightbox").classList.remove("show"));
+
+/* ---------- Unterstützen-Dialog ---------- */
+function setupPayment() {
+  const p = CONFIG.payment;
+  $("pay-amount").textContent = p.amount;
+  $("pay-amount2").textContent = p.amount;
+  $("pay-recipient").textContent = p.recipient;
+  $("pay-iban").textContent = p.iban;
+  $("pay-ref").textContent = p.reference;
+  const ok = !!p.walletLink;
+  ["gpay", "apay"].forEach((id) => {
+    const a = $(id);
+    if (ok) { a.href = p.walletLink; a.removeAttribute("aria-disabled"); }
+    else { a.removeAttribute("href"); a.setAttribute("aria-disabled", "true"); }
+  });
+  $("wallet-note").textContent = ok
+    ? "Apple Pay erscheint auf Apple-Geräten, Google Pay in Chrome und auf Android. Die Zahlung läuft über eine externe Bezahlseite."
+    : "Google Pay und Apple Pay sind noch nicht freigeschaltet. Bis dahin bitte per Überweisung.";
+}
+function openPay() { $("pay-overlay").classList.add("show"); $("close-pay").focus(); }
+function closePay() { $("pay-overlay").classList.remove("show"); $("open-pay").focus(); }
+$("open-pay").addEventListener("click", openPay);
+$("close-pay").addEventListener("click", closePay);
+$("pay-overlay").addEventListener("click", (e) => { if (e.target === $("pay-overlay")) closePay(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { closePay(); $("lightbox").classList.remove("show"); }
+});
+$("gpay").addEventListener("click", (e) => { if (!CONFIG.payment.walletLink) e.preventDefault(); });
+$("apay").addEventListener("click", (e) => { if (!CONFIG.payment.walletLink) e.preventDefault(); });
+
+async function copyText(text, btn) {
+  const old = btn.textContent;
+  try { await navigator.clipboard.writeText(text); btn.textContent = "Kopiert!"; }
+  catch (_) { btn.textContent = "Manuell kopieren"; }
+  setTimeout(() => { btn.textContent = old; }, 1800);
+}
+document.querySelectorAll("[data-copy]").forEach((b) =>
+  b.addEventListener("click", () => copyText($(b.dataset.copy).textContent.replace(/\s+/g, b.dataset.copy === "pay-iban" ? "" : " "), b)));
+$("copy-ip").addEventListener("click", (e) => copyText(CONFIG.serverIp, e.currentTarget));
+
+/* ---------- Seitenwechsel ---------- */
+function route() {
+  const parts = (location.hash.replace(/^#\/?/, "") || "home").split("/");
+  let page = parts[0];
+  if (!["home", "members", "stats", "tutorial"].includes(page)) page = "home";
+  if (page === "stats" && parts[1] && CATEGORIES.some((c) => c.id === parts[1])) currentCat = parts[1];
+  document.querySelectorAll("section.page").forEach((s) => s.classList.toggle("show", s.id === "page-" + page));
+  document.querySelectorAll("[data-nav]").forEach((a) => a.classList.toggle("active", a.dataset.nav === page));
+  if (page === "stats") renderStats();
+  window.scrollTo(0, 0);
+}
+window.addEventListener("hashchange", route);
+
+/* ---------- Start ---------- */
+document.title = CONFIG.serverName + " – Minecraft-Server";
+$("welcome").textContent = "Willkommen auf dem " + CONFIG.serverName;
+$("ip-text").textContent = CONFIG.serverIp;
+setupPayment();
+renderTutorial();
+route();
+loadStats();
+loadOnline();
+setInterval(loadOnline, CONFIG.refreshSeconds * 1000);
+</script>
+</body>
+</html>

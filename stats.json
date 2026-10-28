@@ -1,0 +1,9 @@
+{
+  "updated": "2026-10-28T12:00:00+00:00",
+  "players": [
+    { "name": "Notch", "uuid": "069a79f4-44e9-4726-a5be-fca90e38aaf5", "playtimeHours": 63.8, "deaths": 27, "mobKills": 910, "playerKills": 7, "blocksMined": 28800, "blocksPlaced": 21450, "distanceKm": 142.7, "jumps": 18430, "itemsCrafted": 2210 },
+    { "name": "jeb_", "uuid": "853c80ef-3c37-49fd-aa49-938b674adae6", "playtimeHours": 42.5, "deaths": 12, "mobKills": 340, "playerKills": 3, "blocksMined": 15230, "blocksPlaced": 12880, "distanceKm": 88.4, "jumps": 9120, "itemsCrafted": 1480 },
+    { "name": "Dinnerbone", "uuid": "61699b2e-d327-4a01-9f1e-0ea8c3f06bc6", "playtimeHours": 31.0, "deaths": 41, "mobKills": 205, "playerKills": 11, "blocksMined": 9800, "blocksPlaced": 15200, "distanceKm": 52.3, "jumps": 12050, "itemsCrafted": 760 },
+    { "name": "Grumm", "uuid": "e6b5c088-0680-44ee-9a97-0f6b2c2e1a0b", "playtimeHours": 17.2, "deaths": 5, "mobKills": 120, "playerKills": 0, "blocksMined": 6410, "blocksPlaced": 3900, "distanceKm": 31.0, "jumps": 4300, "itemsCrafted": 540 }
+  ]
+}
