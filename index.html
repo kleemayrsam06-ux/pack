@@ -161,6 +161,30 @@
   .mods h3 { color: var(--green); margin-bottom: 6px; }
   .dl { margin-top: 12px; }
 
+  /* ---------- Features ---------- */
+  .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 16px; }
+  .fcard {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center;
+    min-height: 96px; padding: 12px 8px; color: #fff; text-decoration: none; cursor: pointer;
+    background: #7d7d7d; border: 4px solid var(--line);
+    box-shadow: inset 4px 4px 0 rgba(255,255,255,.4), inset -4px -4px 0 rgba(0,0,0,.4);
+  }
+  .fcard:hover, .fcard:focus-visible { background: #6a8f5a; outline: none; }
+  .fcard.active { background: var(--green-dark); }
+  .fcard .ficon { font-size: 30px; line-height: 1; }
+  .fcard .flabel { font-family: var(--head); font-size: 10px; line-height: 1.5; text-shadow: 2px 2px 0 #000a; }
+  .lead2 { font-size: 26px; margin: 14px 0 0; }
+  .tips { list-style: none; margin: 14px 0 0; padding: 0; }
+  .tips li { position: relative; padding-left: 26px; margin-bottom: 8px; }
+  .tips li::before { content: ""; position: absolute; left: 4px; top: 8px; width: 10px; height: 10px; background: var(--green); box-shadow: inset -3px -3px 0 rgba(0,0,0,.3); }
+  kbd {
+    font-family: var(--head); font-size: 11px; color: #fff; background: #7d7d7d; border: 3px solid #000;
+    padding: 3px 7px; margin: 0 2px; box-shadow: inset 3px 3px 0 rgba(255,255,255,.4), inset -3px -3px 0 rgba(0,0,0,.4);
+  }
+  .shot video, .shot iframe {
+    display: block; width: 100%; max-width: 720px; aspect-ratio: 16 / 9; border: 4px solid #000; background: #000; object-fit: contain;
+  }
+
   /* ---------- Lightbox & Dialog ---------- */
   .overlay {
     position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.78);
@@ -196,6 +220,7 @@
     .rank .avatar { width: 34px; height: 34px; }
     .rank .val { font-size: 10px; }
     .pay-row { grid-template-columns: 1fr; }
+    .fgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 </style>
 </head>
@@ -209,6 +234,7 @@
     <nav aria-label="Hauptmenü">
       <a class="btn" href="#/members" data-nav="members">Teilnehmer</a>
       <a class="btn" href="#/stats" data-nav="stats">Statistiken</a>
+      <a class="btn" href="#/features" data-nav="features">Features</a>
       <a class="btn" href="#/tutorial" data-nav="tutorial">Tutorial</a>
     </nav>
     <button class="btn gold support" id="open-pay" type="button" aria-haspopup="dialog">Whitelist</button>
@@ -241,6 +267,7 @@
       <div class="quick">
         <a class="panel" href="#/members"><h3>Teilnehmer</h3><p class="muted">Wer spielt alles mit?</p></a>
         <a class="panel" href="#/stats"><h3>Statistiken</h3><p class="muted">Tode, Spielzeit, Blöcke, Kills und mehr.</p></a>
+        <a class="panel" href="#/features"><h3>Features</h3><p class="muted">Zoom, Freecam, Voice-Chat und mehr.</p></a>
         <a class="panel" href="#/tutorial"><h3>Tutorial</h3><p class="muted">In wenigen Schritten auf den Server.</p></a>
       </div>
     </div>
@@ -269,6 +296,18 @@
         <p class="note" id="rank-note"></p>
         <ol class="rank" id="rank"></ol>
       </div>
+    </div>
+  </section>
+
+  <!-- ========== FEATURES ========== -->
+  <section class="page" id="page-features">
+    <div class="stack">
+      <div class="panel">
+        <h2>Features</h2>
+        <p class="muted">Das kann das Modpack. Klicke auf ein Feature, um mehr zu erfahren.</p>
+        <div class="fgrid" id="fgrid" role="tablist"></div>
+      </div>
+      <div class="panel" id="fdetail" aria-live="polite"></div>
     </div>
   </section>
 
@@ -546,6 +585,103 @@ function renderStats() {
   });
 }
 
+/* ---------- Features ---------- */
+// media "video" = Platz für ein Demo-Video, "image" = Platz für ein Foto.
+// file = Pfad im Repository. Bei Videos geht auch ein YouTube-Embed-Link (https://www.youtube-nocookie.com/embed/VIDEO-ID).
+// In den Texten wird [G] als Tastenfeld dargestellt.
+const FEATURES = [
+  { id: "zoom", icon: "🔍", label: "Zoom", title: "Zoom", media: "video", file: "videos/zoom.mp4",
+    text: "Mit dem Zoom holst du alles näher heran, was weit weg ist, wie mit einem Fernglas. So erkennst du Gebäude, Tiere oder andere Spieler schon von Weitem.",
+    tips: [
+      "Halte die Zoom-Taste gedrückt, um heranzuzoomen. Lässt du sie los, siehst du wieder normal.",
+      "Die Taste kannst du in den Minecraft-Einstellungen unter „Steuerung“ ansehen und ändern."
+    ] },
+  { id: "freecam", icon: "🎥", label: "Freecam", title: "Freecam", media: "video", file: "videos/freecam.mp4",
+    text: "Mit Freecam löst sich die Kamera von deinem Charakter. Du fliegst frei durch die Welt und schaust dich um, während dein Charakter an seinem Platz stehen bleibt.",
+    tips: [
+      "Praktisch, um Bauten von außen zu betrachten, Projekte zu planen oder Gelände zu erkunden.",
+      "Achtung: Dein Charakter steht dabei weiter an seiner Stelle und kann Schaden nehmen. Schalte Freecam also nicht mitten im Kampf oder in einer Gefahrenzone ein.",
+      "Die Taste steht in den Einstellungen unter „Steuerung“."
+    ] },
+  { id: "voicechat", icon: "🎙️", label: "Voice-Chat", title: "Voice-Chat (Proximity)", media: "video", file: "videos/voicechat.mp4",
+    text: "Mit dem Voice-Chat sprichst du direkt im Spiel mit den anderen. Er funktioniert als Proximity-Chat: Du hörst nur Spieler, die in deiner Nähe sind.",
+    tips: [
+      "So funktioniert Proximity: Je weiter jemand von dir weg ist, desto leiser hörst du ihn. Außerhalb der Reichweite hörst du ihn gar nicht.",
+      "Die Reichweite liegt meist bei 48 Blöcken, auf unserem Server kann sie abweichen. Wenn du mit jemandem reden willst, geh also einfach zu ihm hin.",
+      "Der Ton kommt aus der Richtung, in der der andere steht.",
+      "Beim ersten Start führt dich ein Assistent durch die Mikrofon-Einstellungen. Die Einstellungen öffnest du später mit [V]. Dort wählst du auch zwischen Sprachaktivierung und Push-to-talk."
+    ] },
+  { id: "fullbright", icon: "💡", label: "Fullbright", title: "Fullbright", media: "image", file: "screenshots/features/fullbright.png",
+    text: "Fullbright macht alles hell. Du siehst in Höhlen, in der Nacht und in dunklen Ecken so gut wie bei Tageslicht, auch ohne Fackeln.",
+    tips: [
+      "Mit [G] schaltest du Fullbright an. Drückst du [G] noch einmal, ist es wieder aus.",
+      "Es ändert nur, was du siehst. Mobs können in dunklen Bereichen trotzdem spawnen, beleuchte deine Gebiete also weiterhin.",
+      "Praktisch zum Erkunden von Höhlen."
+    ] },
+  { id: "minimap", icon: "🗺️", label: "Minimap", title: "Minimap", media: "image", file: "screenshots/features/minimap.png",
+    text: "Die Minimap ist eine kleine Karte in der Ecke deines Bildschirms. Sie zeigt deine Umgebung von oben, damit du dich leichter zurechtfindest.",
+    tips: [
+      "Du kannst die große Karte öffnen und dort Markierungen setzen, zum Beispiel für dein Zuhause, Farmen oder Portale.",
+      "Deine Markierungen siehst du auch auf der kleinen Minimap, so findest du Orte schnell wieder.",
+      "Die Tasten dafür stehen in den Einstellungen unter „Steuerung“."
+    ] },
+  { id: "render", icon: "👁️", label: "Render Distance", title: "Render Distance", media: "image", file: "screenshots/features/render-distance.png",
+    text: "Die Render Distance (auf Deutsch Renderdistanz) legt fest, wie viele Chunks rund um dich angezeigt werden. Mehr Chunks heißt: Du siehst weiter, aber das Spiel braucht mehr Leistung.",
+    tips: [
+      "Du findest sie in den Minecraft-Einstellungen bei den Video- bzw. Grafikeinstellungen.",
+      "Ruckelt das Spiel, stell die Renderdistanz niedriger. Hast du einen starken PC, kannst du sie höher stellen.",
+      "Der Server begrenzt, wie weit Chunks angezeigt werden. Höhere Werte bringen dann nichts mehr.",
+      "Distant Horizons zeigt zusätzlich weit entfernte Landschaft als vereinfachtes Gelände."
+    ] }
+];
+let currentFeature = FEATURES[0].id;
+
+function richText(str) {
+  const frag = document.createDocumentFragment();
+  str.split(/(\[[^\]]+\])/).forEach((part) => {
+    const m = part.match(/^\[([^\]]+)\]$/);
+    if (m) frag.append(el("kbd", { text: m[1] }));
+    else if (part) frag.append(document.createTextNode(part));
+  });
+  return frag;
+}
+
+function mediaBlock(f) {
+  const isVideo = f.media === "video";
+  const fig = el("figure", { class: "shot" });
+  const placeholder = () => el("div", { class: "ph" }, el("div", {},
+    el("div", { text: isVideo ? "Demo-Video folgt" : "Foto folgt" }),
+    el("div", { class: "note", text: f.file })));
+  let node;
+  if (isVideo && /^https:\/\/(www\.)?youtube(-nocookie)?\.com\/embed\//.test(f.file)) {
+    node = el("iframe", { src: f.file, title: "Demo-Video: " + f.title, loading: "lazy", allowfullscreen: "",
+      allow: "accelerometer; encrypted-media; gyroscope; picture-in-picture", referrerpolicy: "strict-origin-when-cross-origin" });
+  } else if (isVideo) {
+    node = el("video", { src: f.file, controls: "", preload: "metadata", playsinline: "" });
+    node.addEventListener("error", () => node.replaceWith(placeholder()), { once: true });
+  } else {
+    node = el("img", { src: f.file, alt: "Foto: " + f.title, loading: "lazy" });
+    node.addEventListener("error", () => node.replaceWith(placeholder()), { once: true });
+    node.addEventListener("click", () => openLightbox(node.src, f.title));
+  }
+  fig.append(node, el("figcaption", { text: (isVideo ? "Demo-Video: " : "Foto: ") + f.title }));
+  return fig;
+}
+
+function renderFeatures() {
+  const grid = $("fgrid");
+  grid.replaceChildren();
+  FEATURES.forEach((f) => {
+    const a = el("a", { class: "fcard" + (f.id === currentFeature ? " active" : ""), href: "#/features/" + f.id, role: "tab", "aria-selected": String(f.id === currentFeature) });
+    a.append(el("span", { class: "ficon", text: f.icon }), el("span", { class: "flabel", text: f.label }));
+    grid.append(a);
+  });
+  const f = FEATURES.find((x) => x.id === currentFeature) || FEATURES[0];
+  const ul = el("ul", { class: "tips" });
+  f.tips.forEach((t) => ul.append(el("li", {}, richText(t))));
+  $("fdetail").replaceChildren(el("h2", { text: f.title }), el("p", { class: "lead2" }, richText(f.text)), ul, mediaBlock(f));
+}
+
 /* ---------- Tutorial ---------- */
 const STEPS = [
   { title: "Prism Launcher installieren", img: "01-prism-download.png", alt: "Download-Seite des Prism Launchers",
@@ -631,15 +767,19 @@ document.querySelectorAll("[data-copy]").forEach((b) =>
 $("copy-ip").addEventListener("click", (e) => copyText(CONFIG.serverIp, e.currentTarget));
 
 /* ---------- Seitenwechsel ---------- */
+let lastPage = null;
 function route() {
   const parts = (location.hash.replace(/^#\/?/, "") || "home").split("/");
   let page = parts[0];
-  if (!["home", "members", "stats", "tutorial"].includes(page)) page = "home";
+  if (!["home", "members", "stats", "features", "tutorial"].includes(page)) page = "home";
   if (page === "stats" && parts[1] && CATEGORIES.some((c) => c.id === parts[1])) currentCat = parts[1];
+  if (page === "features" && parts[1] && FEATURES.some((f) => f.id === parts[1])) currentFeature = parts[1];
   document.querySelectorAll("section.page").forEach((s) => s.classList.toggle("show", s.id === "page-" + page));
   document.querySelectorAll("[data-nav]").forEach((a) => a.classList.toggle("active", a.dataset.nav === page));
   if (page === "stats") renderStats();
-  window.scrollTo(0, 0);
+  if (page === "features") renderFeatures();
+  if (page !== lastPage) window.scrollTo(0, 0);
+  lastPage = page;
 }
 window.addEventListener("hashchange", route);
 
