@@ -625,13 +625,12 @@ const FEATURES = [
       "Deine Markierungen siehst du auch auf der kleinen Minimap, so findest du Orte schnell wieder.",
       "Die Tasten dafür stehen in den Einstellungen unter „Steuerung“."
     ] },
-  { id: "render", icon: "👁️", label: "Render Distance", title: "Render Distance", media: "image", file: "screenshots/features/render-distance.png",
-    text: "Die Render Distance (auf Deutsch Renderdistanz) legt fest, wie viele Chunks rund um dich angezeigt werden. Mehr Chunks heißt: Du siehst weiter, aber das Spiel braucht mehr Leistung.",
+  { id: "distant", icon: "🏔️", label: "Distant Horizons", title: "Distant Horizons", media: "image", file: "screenshots/features/distant-horizons.png",
+    text: "Normalerweise siehst du in Minecraft nur ein paar Chunks weit, dahinter beginnt der Nebel. Distant Horizons zeigt dahinter vereinfachtes Gelände bis weit in die Ferne. So siehst du Berge, Wälder und Bauten schon von Weitem.",
     tips: [
-      "Du findest sie in den Minecraft-Einstellungen bei den Video- bzw. Grafikeinstellungen.",
-      "Ruckelt das Spiel, stell die Renderdistanz niedriger. Hast du einen starken PC, kannst du sie höher stellen.",
-      "Der Server begrenzt, wie weit Chunks angezeigt werden. Höhere Werte bringen dann nichts mehr.",
-      "Distant Horizons zeigt zusätzlich weit entfernte Landschaft als vereinfachtes Gelände."
+      "Das ferne Gelände ist eine vereinfachte Version (LOD, Level of Detail) und sieht aus der Nähe weniger detailliert aus. Kommst du näher, lädt Minecraft den Bereich ganz normal.",
+      "Das ferne Gelände entsteht aus den Gebieten, die du schon gesehen hast. Je mehr du die Welt erkundest, desto weiter reicht die Aussicht.",
+      "Es braucht mehr Leistung. Ruckelt das Spiel, stell in den Distant-Horizons-Einstellungen die Reichweite niedriger."
     ] }
 ];
 let currentFeature = FEATURES[0].id;
